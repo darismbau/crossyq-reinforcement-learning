@@ -716,12 +716,12 @@ class RenderMixin:
             self.text("Traverse sans te faire écraser !", self.f_mid, (W // 2, 244))
             sk = SKINS[self.skin_i]
             lock = "" if sk["name"] in self.owned else "  -  verrouillé : %d pièces" % sk["price"]
-            self.text("C : personnage  >  %s%s" % (sk["name"], lock), self.f_small, (W // 2, 540),
+            self.text("C : personnage  >  %s%s" % (sk["name"], lock), self.f_small, (W // 2, 520),
                       (255, 220, 80) if not lock else (255, 140, 140))
-            self.text("ESPACE ou flèches ", self.f_mid, (W // 2, 590))
-            self.text("pour commencer !", self.f_mid, (W // 2, 630))
-            self.text("Flèches / ZQSD / WASD  -  I : activer l'IA", self.f_small, (W // 2, 680))
-            self.text("P : pause  -  R : rejouer", self.f_small, (W // 2, 714))
+            self.text("ESPACE ou flèches ", self.f_mid, (W // 2, 570))
+            self.text("pour commencer !", self.f_mid, (W // 2, 610))
+            self.text("Flèches / ZQSD / WASD  -  I : activer l'IA", self.f_small, (W // 2, 660))
+            self.text("P : pause  -  R : rejouer", self.f_small, (W // 2, 794))
         elif self.state == "dead" and self.dead_t > (1.3 if self.dead == "eagle" else 0.8):
             ov = pygame.Surface((W, H), pygame.SRCALPHA)
             ov.fill((0, 0, 0, 120))
