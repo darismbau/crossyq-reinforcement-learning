@@ -7,6 +7,7 @@ import sys
 
 import pygame
 
+from ai import CrossyAI
 from settings import (LEAD, HOP_T, COL_MAX, WRAP, LOG_SNAP_SPEED, LOG_DIP_DEPTH, LOG_DIP_TIME,
                       SAVE_FILE, ZT, SKINS, LEVEL_STEP,
                       CAM_SMOOTH_Y, CAM_SMOOTH_X, COP_INTERVAL_START, COP_INTERVAL_END, COP_MIN_SCORE, COP_SPEED)
@@ -26,6 +27,9 @@ class Game(RenderMixin):
         self.best, self.coins = 0, 0
         self.owned, self.skin_i = {s["name"] for s in SKINS if s["price"] == 0}, 0     # les persos gratuits sont débloqués
         self.snd = make_sounds()
+        self.ai = CrossyAI()
+        self.ai_enabled = False
+        self.ai_timer = 0.0
         self.load()
         self.t = 0.0
         self.paused = False
@@ -72,6 +76,7 @@ class Game(RenderMixin):
         self.run_coins = 0
         self.cop_t = self.cop_delay()
         self.cop_row = None
+        self.ai_timer = 0.0
         self.stop_siren()
         self.world.generate(30)
 
@@ -150,6 +155,12 @@ class Game(RenderMixin):
             self.shutdown()
             pygame.quit()
             sys.exit()
+        if k == pygame.K_i and self.state in ("title", "play"):
+            self.ai_enabled = not self.ai_enabled
+            self.ai_timer = 0.0
+            if self.state == "title":
+                self.state = "play"
+            return
         if k == pygame.K_p and self.state == "play":
             self.paused = not self.paused
             try:
@@ -473,3 +484,10 @@ class Game(RenderMixin):
             return
         w.generate(int(self.cam_y) + 30)
         w.prune(int(self.cam_y) - 16)
+        if self.ai_enabled and not self.paused and self.state == "play":
+            self.ai_timer += dt
+            if self.ai_timer >= 0.18:
+                self.ai_timer = 0.0
+                action = self.ai.choose_action(self)
+                if action is not None:
+                    self.try_hop(*action)

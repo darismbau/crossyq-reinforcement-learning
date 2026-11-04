@@ -704,6 +704,8 @@ class RenderMixin:
         self.text(str(self.coins), self.f_mid, (W - 46, 10), anchor="right")
         if self.state in ("play", "dead"):
             self.text("Niveau %d" % self.level, self.f_small, (W // 2, 10), (255, 240, 120), anchor="top")
+        if self.ai_enabled and self.state in ("play", "dead"):
+            self.text("IA active - I pour reprendre", self.f_small, (20, 108), (170, 255, 170), anchor="left")
         if self.state == "play" and self.t - self.lvl_t < 1.6:
             self.text("NIVEAU %d !" % self.level, self.f_mid, (W // 2, 300), (255, 240, 120))
         if self.state == "title":
@@ -718,7 +720,8 @@ class RenderMixin:
                       (255, 220, 80) if not lock else (255, 140, 140))
             self.text("ESPACE ou flèches ", self.f_mid, (W // 2, 590))
             self.text("pour commencer !", self.f_mid, (W // 2, 630))
-            self.text("Flèches / ZQSD / WASD  -  P pause  -  R rejouer", self.f_small, (W // 2, 680))
+            self.text("Flèches / ZQSD / WASD  -  I : activer l'IA", self.f_small, (W // 2, 680))
+            self.text("P : pause  -  R : rejouer", self.f_small, (W // 2, 714))
         elif self.state == "dead" and self.dead_t > (1.3 if self.dead == "eagle" else 0.8):
             ov = pygame.Surface((W, H), pygame.SRCALPHA)
             ov.fill((0, 0, 0, 120))
