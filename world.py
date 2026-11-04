@@ -89,7 +89,7 @@ class World:
     #   meadow = 1-2 rangées d'herbe | road = 4 à 8 routes | river = groupe de bûches | lilies = groupe de nénuphars
     #   mixed = eau mélangée | rail = voie ferrée | crossing = rail + 2-3 routes + rail | chaos = mélange libre
     SECTION_EASY = dict(meadow=4.0, road=1.5, chaos=3.2, river=0.5, lilies=0.35, rail=0.7, crossing=0.0, mixed=0.0)
-    SECTION_HARD = dict(meadow=1.2, road=3.6, chaos=2.0, river=3.4, lilies=2.1, rail=1.5, crossing=1.3, mixed=2.1)
+    SECTION_HARD = dict(meadow=1.2, road=3.6, chaos=2.0, river=3.6, lilies=1.9, rail=1.5, crossing=1.3, mixed=2.1)
 
     def __init__(self):
         self.rng = random.Random()
@@ -98,6 +98,7 @@ class World:
         self.plan = ["grass"]                 # rangées déjà planifiées ("rest" = herbe de repos) ; départ en douceur
         self.last_section, self.last_rest = "start", 0
         self.reach = set(range(-COL_MAX, COL_MAX + 1))   # colonnes atteignables sur la dernière rangée
+        self.reach_groups = [set(self.reach)]            # ... réparties en groupes de cases qui communiquent sur les côtés
         for y in range(-16, 2):
             self.rows[y] = self.make(y, "grass", start=True)
         self.top = 2
@@ -292,19 +293,43 @@ class World:
                     stack.append(n)
         return out
 
-    def ensure_passable(self, row):
-        """Si le joueur ne peut pas entrer dans cette rangée depuis la précédente,
-        on ouvre un passage (on retire un arbre ou on ajoute un nénuphar)."""
-        enter = {c for c in self.reach if self.standable(row, c)}
-        if not enter:
-            c = self.rng.choice(sorted(self.reach))
-            if row.kind == "grass":
-                row.trees.pop(c, None)
-            elif row.kind == "pads":
-                row.pads.add(c)
-            enter = {c}
-        self.reach = self.spread(row, enter)
+    def groups(self, row, cells):
+        """Sépare les cases atteignables d'une rangée en groupes dont les cases communiquent sur les côtés."""
+        if not cells:
+            return []
+        if row.kind not in ("grass", "pads"):
+            return [set(cells)]                            # route, rails, rivière : on circule librement
+        out, cur = [], set()
+        for c in range(-COL_MAX, COL_MAX + 1):
+            if c in cells:
+                cur.add(c)
+            elif cur:
+                out.append(cur)
+                cur = set()
+        if cur:
+            out.append(cur)
+        return out
 
+    def open_cell(self, row, c):
+        """Ouvre la case (row, c) : retire l'arbre / le rocher, ou ajoute un nénuphar."""
+        if row.kind == "grass":
+            row.trees.pop(c, None)
+        elif row.kind == "pads":
+            row.pads.add(c)
+
+
+    # ANTI-IMPASSE : chaque groupe de cases que le joueur peut atteindre sur la rangée précédente doit
+    # avoir au moins UNE sortie dans cette rangée
+       
+    def ensure_passable(self, row):
+        for grp in self.reach_groups:
+            if not any(self.standable(row, c) for c in grp):
+                self.open_cell(row, self.rng.choice(sorted(grp)))
+        enter = {c for c in self.reach if self.standable(row, c)}
+        self.reach = self.spread(row, enter)
+        self.reach_groups = self.groups(row, self.reach)
+
+    #Niveau passer
     def prune(self, y_min):
         """Supprime les rangées derrière la caméra."""
         for y in [y for y in self.rows if y < y_min]:
